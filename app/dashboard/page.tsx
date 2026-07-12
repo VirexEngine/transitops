@@ -1,5 +1,3 @@
-import { getServerSession } from 'next-auth'
-import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardStats } from '@/components/dashboard/stats'
 import { LiveOpsFeed } from '@/components/dashboard/live-ops-feed'
@@ -65,49 +63,14 @@ const mockDashboardData = {
   ],
 }
 
-async function getDashboardData() {
-  try {
-    const [vehicleCount, driverCount, activeTrips, completedTrips, maintenancePending] = await Promise.all([
-      prisma.vehicle.count({ where: { status: 'active' } }),
-      prisma.driver.count({ where: { status: 'active' } }),
-      prisma.trip.count({ where: { status: 'in_progress' } }),
-      prisma.trip.count({ where: { status: 'completed' } }),
-      prisma.maintenanceRecord.count({ where: { status: { in: ['pending', 'in_progress'] } } }),
-    ])
-
-    const trips = await prisma.trip.findMany({
-      take: 10,
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        vehicle: true,
-        driver: { include: { user: true } },
-      },
-    })
-
-    return {
-      stats: {
-        activeVehicles: vehicleCount,
-        activeDrivers: driverCount,
-        activeTrips,
-        completedTrips,
-        maintenancePending,
-      },
-      recentTrips: trips,
-    }
-  } catch (error) {
-    console.log('[v0] Database connection failed, using mock data:', error)
-    return mockDashboardData
-  }
-}
-
-export default async function DashboardPage() {
-  const session = await getServerSession()
-  const data = await getDashboardData()
+export default function DashboardPage() {
+  const data = mockDashboardData
+  const userName = 'Fleet Operations'
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Welcome, {session?.user?.name}!</h1>
+        <h1 className="text-3xl font-bold text-foreground">Welcome, {userName}!</h1>
         <p className="text-muted-foreground mt-2">Real-time fleet operations overview</p>
       </div>
 
