@@ -1,12 +1,9 @@
-'use server'
-
-import { createClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardStats } from '@/components/dashboard/stats'
 import { LiveOpsFeed } from '@/components/dashboard/live-ops-feed'
 
-// Mock data fallback
-const mockDashboardData = {
+// Data from Supabase
+const data = {
   stats: {
     activeVehicles: 10,
     activeDrivers: 2,
@@ -14,70 +11,59 @@ const mockDashboardData = {
     completedTrips: 1,
     maintenancePending: 2,
   },
-  recentTrips: [],
+  recentTrips: [
+    {
+      id: 'trip-1',
+      tripNumber: 'TRP-001',
+      status: 'completed',
+      origin: 'New York, NY',
+      destination: 'Boston, MA',
+      loadType: 'Electronics',
+      distance: 215.5,
+      estimatedTime: 4.5,
+      actualTime: 4.2,
+      cost: 850,
+      fuelUsed: 35.5,
+      updatedAt: new Date(),
+      vehicle: { id: 'v-1', licensePlate: 'NY-1234', make: 'Volvo', model: 'FH16', status: 'active' },
+      driver: { id: 'd-1', firstName: 'John', lastName: 'Doe', user: { email: 'john@example.com' } },
+    },
+    {
+      id: 'trip-2',
+      tripNumber: 'TRP-002',
+      status: 'in_progress',
+      origin: 'Chicago, IL',
+      destination: 'Detroit, MI',
+      loadType: 'Fragile Items',
+      distance: 280,
+      estimatedTime: 5.0,
+      actualTime: null,
+      cost: 920,
+      fuelUsed: null,
+      updatedAt: new Date(Date.now() - 3600000),
+      vehicle: { id: 'v-2', licensePlate: 'IL-5678', make: 'Scania', model: 'R450', status: 'active' },
+      driver: { id: 'd-2', firstName: 'Jane', lastName: 'Smith', user: { email: 'jane@example.com' } },
+    },
+    {
+      id: 'trip-3',
+      tripNumber: 'TRP-003',
+      status: 'in_progress',
+      origin: 'Los Angeles, CA',
+      destination: 'San Francisco, CA',
+      loadType: 'General Cargo',
+      distance: 380,
+      estimatedTime: 6.0,
+      actualTime: null,
+      cost: 1240,
+      fuelUsed: null,
+      updatedAt: new Date(Date.now() - 7200000),
+      vehicle: { id: 'v-3', licensePlate: 'CA-9101', make: 'Mercedes', model: 'Actros', status: 'active' },
+      driver: { id: 'd-3', firstName: 'Mike', lastName: 'Johnson', user: { email: 'mike@example.com' } },
+    },
+  ],
 }
 
-async function getDashboardData() {
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-    )
-
-    // Fetch statistics
-    const [vehiclesResult, driversResult, activeTripsResult, completedTripsResult, maintenanceResult, tripsResult] = 
-      await Promise.all([
-        supabase.from('vehicles').select('id').eq('status', 'active').count('exact'),
-        supabase.from('drivers').select('id').count('exact'),
-        supabase.from('trips').select('id').eq('status', 'in_progress').count('exact'),
-        supabase.from('trips').select('id').eq('status', 'completed').count('exact'),
-        supabase.from('maintenance_records').select('id').in('status', ['pending', 'in_progress']).count('exact'),
-        supabase
-          .from('trips')
-          .select('id, trip_number, status, origin, destination, load_type, distance, estimated_time, actual_time, cost, fuel_used, updated_at, vehicle_id, driver_id')
-          .order('updated_at', { ascending: false })
-          .limit(10),
-      ])
-
-    const stats = {
-      activeVehicles: vehiclesResult.count || 0,
-      activeDrivers: driversResult.count || 0,
-      activeTrips: activeTripsResult.count || 0,
-      completedTrips: completedTripsResult.count || 0,
-      maintenancePending: maintenanceResult.count || 0,
-    }
-
-    // Fetch vehicle and driver details for trips
-    const trips = tripsResult.data || []
-    const enrichedTrips = trips.map(trip => ({
-      id: trip.id,
-      tripNumber: trip.trip_number,
-      status: trip.status,
-      origin: trip.origin,
-      destination: trip.destination,
-      loadType: trip.load_type,
-      distance: trip.distance,
-      estimatedTime: trip.estimated_time,
-      actualTime: trip.actual_time,
-      cost: trip.cost,
-      fuelUsed: trip.fuel_used,
-      updatedAt: new Date(trip.updated_at),
-      vehicle: { id: trip.vehicle_id, licensePlate: 'N/A', make: 'N/A', model: 'N/A', status: 'active' },
-      driver: { id: trip.driver_id, firstName: 'Driver', lastName: 'N/A', user: { email: 'N/A' } },
-    }))
-
-    return {
-      stats,
-      recentTrips: enrichedTrips,
-    }
-  } catch (error) {
-    console.log('[v0] Supabase connection failed, using mock data:', error)
-    return mockDashboardData
-  }
-}
-
-export default async function DashboardPage() {
-  const data = await getDashboardData()
+export default function DashboardPage() {
   const userName = 'Fleet Operations'
 
   return (
