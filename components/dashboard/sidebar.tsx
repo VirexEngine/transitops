@@ -13,7 +13,8 @@ import {
   BarChart3,
   LogOut 
 } from 'lucide-react'
-import { signOut } from 'next-auth/react'
+// TODO: Re-enable signOut after auth is working
+// import { signOut } from 'next-auth/react'
 
 const navItems = [
   {
@@ -87,7 +88,11 @@ export function Sidebar() {
 
       <div className="p-4 border-t border-border">
         <button
-          onClick={() => signOut({ redirect: true, callbackUrl: '/login' })}
+          onClick={() => {
+            // TODO: Re-enable after auth is working
+            // signOut({ redirect: true, callbackUrl: '/login' })
+            alert('Sign out will be enabled after auth setup is complete')
+          }}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors"
         >
           <LogOut className="w-4 h-4" />

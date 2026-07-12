@@ -1,10 +1,13 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import { User, Bell } from 'lucide-react'
 
 export function TopNav() {
-  const { data: session } = useSession()
+  // Mock user data for now (auth session will be added later)
+  const mockUser = {
+    name: 'Admin User',
+    role: 'ADMIN',
+  }
 
   return (
     <header className="h-14 border-b border-border bg-card px-6 flex items-center justify-between">
@@ -22,9 +25,9 @@ export function TopNav() {
             <User className="w-4 h-4 text-primary-foreground" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">{session?.user?.name}</p>
+            <p className="text-sm font-medium text-foreground">{mockUser.name}</p>
             <p className="text-xs text-muted-foreground capitalize">
-              {session?.user?.role?.toLowerCase().replace('_', ' ')}
+              {mockUser.role.toLowerCase().replace('_', ' ')}
             </p>
           </div>
         </div>

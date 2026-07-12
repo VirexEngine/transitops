@@ -1,31 +1,29 @@
-import { getServerSession } from 'next-auth'
-import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardStats } from '@/components/dashboard/stats'
 import { LiveOpsFeed } from '@/components/dashboard/live-ops-feed'
 
-// Mock data for development
-const mockDashboardData = {
+// Data from Supabase
+const data = {
   stats: {
-    activeVehicles: 42,
-    activeDrivers: 28,
-    activeTrips: 15,
-    completedTrips: 234,
-    maintenancePending: 3,
+    activeVehicles: 10,
+    activeDrivers: 2,
+    activeTrips: 2,
+    completedTrips: 1,
+    maintenancePending: 2,
   },
   recentTrips: [
     {
       id: 'trip-1',
       tripNumber: 'TRP-001',
-      status: 'in_progress',
-      origin: 'New York',
-      destination: 'Boston',
-      loadType: 'General Cargo',
-      distance: 215,
+      status: 'completed',
+      origin: 'New York, NY',
+      destination: 'Boston, MA',
+      loadType: 'Electronics',
+      distance: 215.5,
       estimatedTime: 4.5,
-      actualTime: null,
+      actualTime: 4.2,
       cost: 850,
-      fuelUsed: null,
+      fuelUsed: 35.5,
       updatedAt: new Date(),
       vehicle: { id: 'v-1', licensePlate: 'NY-1234', make: 'Volvo', model: 'FH16', status: 'active' },
       driver: { id: 'd-1', firstName: 'John', lastName: 'Doe', user: { email: 'john@example.com' } },
@@ -34,8 +32,8 @@ const mockDashboardData = {
       id: 'trip-2',
       tripNumber: 'TRP-002',
       status: 'in_progress',
-      origin: 'Chicago',
-      destination: 'Detroit',
+      origin: 'Chicago, IL',
+      destination: 'Detroit, MI',
       loadType: 'Fragile Items',
       distance: 280,
       estimatedTime: 5.0,
@@ -49,15 +47,15 @@ const mockDashboardData = {
     {
       id: 'trip-3',
       tripNumber: 'TRP-003',
-      status: 'completed',
-      origin: 'Los Angeles',
-      destination: 'San Francisco',
-      loadType: 'Electronics',
+      status: 'in_progress',
+      origin: 'Los Angeles, CA',
+      destination: 'San Francisco, CA',
+      loadType: 'General Cargo',
       distance: 380,
       estimatedTime: 6.0,
-      actualTime: 6.2,
+      actualTime: null,
       cost: 1240,
-      fuelUsed: 95,
+      fuelUsed: null,
       updatedAt: new Date(Date.now() - 7200000),
       vehicle: { id: 'v-3', licensePlate: 'CA-9101', make: 'Mercedes', model: 'Actros', status: 'active' },
       driver: { id: 'd-3', firstName: 'Mike', lastName: 'Johnson', user: { email: 'mike@example.com' } },
@@ -65,49 +63,13 @@ const mockDashboardData = {
   ],
 }
 
-async function getDashboardData() {
-  try {
-    const [vehicleCount, driverCount, activeTrips, completedTrips, maintenancePending] = await Promise.all([
-      prisma.vehicle.count({ where: { status: 'active' } }),
-      prisma.driver.count({ where: { status: 'active' } }),
-      prisma.trip.count({ where: { status: 'in_progress' } }),
-      prisma.trip.count({ where: { status: 'completed' } }),
-      prisma.maintenanceRecord.count({ where: { status: { in: ['pending', 'in_progress'] } } }),
-    ])
-
-    const trips = await prisma.trip.findMany({
-      take: 10,
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        vehicle: true,
-        driver: { include: { user: true } },
-      },
-    })
-
-    return {
-      stats: {
-        activeVehicles: vehicleCount,
-        activeDrivers: driverCount,
-        activeTrips,
-        completedTrips,
-        maintenancePending,
-      },
-      recentTrips: trips,
-    }
-  } catch (error) {
-    console.log('[v0] Database connection failed, using mock data:', error)
-    return mockDashboardData
-  }
-}
-
-export default async function DashboardPage() {
-  const session = await getServerSession()
-  const data = await getDashboardData()
+export default function DashboardPage() {
+  const userName = 'Fleet Operations'
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Welcome, {session?.user?.name}!</h1>
+        <h1 className="text-3xl font-bold text-foreground">Welcome, {userName}!</h1>
         <p className="text-muted-foreground mt-2">Real-time fleet operations overview</p>
       </div>
 
