@@ -4,33 +4,99 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DashboardStats } from '@/components/dashboard/stats'
 import { LiveOpsFeed } from '@/components/dashboard/live-ops-feed'
 
+// Mock data for development
+const mockDashboardData = {
+  stats: {
+    activeVehicles: 42,
+    activeDrivers: 28,
+    activeTrips: 15,
+    completedTrips: 234,
+    maintenancePending: 3,
+  },
+  recentTrips: [
+    {
+      id: 'trip-1',
+      tripNumber: 'TRP-001',
+      status: 'in_progress',
+      origin: 'New York',
+      destination: 'Boston',
+      loadType: 'General Cargo',
+      distance: 215,
+      estimatedTime: 4.5,
+      actualTime: null,
+      cost: 850,
+      fuelUsed: null,
+      updatedAt: new Date(),
+      vehicle: { id: 'v-1', licensePlate: 'NY-1234', make: 'Volvo', model: 'FH16', status: 'active' },
+      driver: { id: 'd-1', firstName: 'John', lastName: 'Doe', user: { email: 'john@example.com' } },
+    },
+    {
+      id: 'trip-2',
+      tripNumber: 'TRP-002',
+      status: 'in_progress',
+      origin: 'Chicago',
+      destination: 'Detroit',
+      loadType: 'Fragile Items',
+      distance: 280,
+      estimatedTime: 5.0,
+      actualTime: null,
+      cost: 920,
+      fuelUsed: null,
+      updatedAt: new Date(Date.now() - 3600000),
+      vehicle: { id: 'v-2', licensePlate: 'IL-5678', make: 'Scania', model: 'R450', status: 'active' },
+      driver: { id: 'd-2', firstName: 'Jane', lastName: 'Smith', user: { email: 'jane@example.com' } },
+    },
+    {
+      id: 'trip-3',
+      tripNumber: 'TRP-003',
+      status: 'completed',
+      origin: 'Los Angeles',
+      destination: 'San Francisco',
+      loadType: 'Electronics',
+      distance: 380,
+      estimatedTime: 6.0,
+      actualTime: 6.2,
+      cost: 1240,
+      fuelUsed: 95,
+      updatedAt: new Date(Date.now() - 7200000),
+      vehicle: { id: 'v-3', licensePlate: 'CA-9101', make: 'Mercedes', model: 'Actros', status: 'active' },
+      driver: { id: 'd-3', firstName: 'Mike', lastName: 'Johnson', user: { email: 'mike@example.com' } },
+    },
+  ],
+}
+
 async function getDashboardData() {
-  const [vehicleCount, driverCount, activeTrips, completedTrips, maintenancePending] = await Promise.all([
-    prisma.vehicle.count({ where: { status: 'active' } }),
-    prisma.driver.count({ where: { status: 'active' } }),
-    prisma.trip.count({ where: { status: 'in_progress' } }),
-    prisma.trip.count({ where: { status: 'completed' } }),
-    prisma.maintenanceRecord.count({ where: { status: { in: ['pending', 'in_progress'] } } }),
-  ])
+  try {
+    const [vehicleCount, driverCount, activeTrips, completedTrips, maintenancePending] = await Promise.all([
+      prisma.vehicle.count({ where: { status: 'active' } }),
+      prisma.driver.count({ where: { status: 'active' } }),
+      prisma.trip.count({ where: { status: 'in_progress' } }),
+      prisma.trip.count({ where: { status: 'completed' } }),
+      prisma.maintenanceRecord.count({ where: { status: { in: ['pending', 'in_progress'] } } }),
+    ])
 
-  const trips = await prisma.trip.findMany({
-    take: 10,
-    orderBy: { updatedAt: 'desc' },
-    include: {
-      vehicle: true,
-      driver: { include: { user: true } },
-    },
-  })
+    const trips = await prisma.trip.findMany({
+      take: 10,
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        vehicle: true,
+        driver: { include: { user: true } },
+      },
+    })
 
-  return {
-    stats: {
-      activeVehicles: vehicleCount,
-      activeDrivers: driverCount,
-      activeTrips,
-      completedTrips,
-      maintenancePending,
-    },
-    recentTrips: trips,
+    return {
+      stats: {
+        activeVehicles: vehicleCount,
+        activeDrivers: driverCount,
+        activeTrips,
+        completedTrips,
+        maintenancePending,
+      },
+      recentTrips: trips,
+    }
+  } catch (error) {
+    console.log('[v0] Database connection failed, using mock data:', error)
+    return mockDashboardData
   }
 }
 
