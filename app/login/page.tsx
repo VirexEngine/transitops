@@ -13,21 +13,13 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
-
-    try {
-      // Direct bypass - go straight to dashboard
-      // Simulating successful login by redirecting immediately
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 500)
-    } catch (err) {
-      setError('An error occurred during login')
-      setIsLoading(false)
-    }
+    
+    // Immediate redirect to dashboard
+    router.push('/dashboard')
   }
 
   return (
