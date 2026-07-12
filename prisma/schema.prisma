@@ -1,0 +1,178 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String
+  name      String
+  role      UserRole
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  driverId String?
+  driver   Driver?
+
+  @@index([role])
+  @@index([active])
+}
+
+model Vehicle {
+  id                String   @id @default(cuid())
+  registrationPlate String   @unique
+  model             String
+  year              Int
+  type              String   // "truck", "van", "car"
+  status            String   @default("active") // "active", "maintenance", "decommissioned"
+  fuelType          String   // "petrol", "diesel", "electric"
+  capacity          Float    // cargo capacity in tons
+  maintenanceIntervalDays Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  trips             Trip[]
+  maintenanceRecords MaintenanceRecord[]
+  fuelRecords       FuelRecord[]
+  expenses          Expense[]
+
+  @@index([status])
+  @@index([registrationPlate])
+}
+
+model Driver {
+  id                String   @id @default(cuid())
+  licenseNumber     String   @unique
+  licenseExpiry     DateTime
+  safetyScore       Float    @default(100)
+  status            String   @default("active") // "active", "inactive", "suspended"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trips  Trip[]
+
+  @@index([status])
+  @@index([licenseNumber])
+}
+
+model Trip {
+  id                 String   @id @default(cuid())
+  tripCode           String   @unique
+  startLocation      String
+  endLocation        String
+  distance           Float    // kilometers
+  status             String   @default("pending") // "pending", "in_progress", "completed", "cancelled"
+  plannedStartDate   DateTime
+  actualStartDate    DateTime?
+  actualEndDate      DateTime?
+  cargoWeight        Float    // tons
+  cargoDescription   String
+  estimatedCost      Float
+  actualCost         Float?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+  driverId  String
+  driver    Driver  @relation(fields: [driverId], references: [id])
+  expenses  Expense[]
+
+  @@index([status])
+  @@index([tripCode])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([plannedStartDate])
+}
+
+model MaintenanceRecord {
+  id              String   @id @default(cuid())
+  maintenanceType String   // "preventive", "corrective", "emergency"
+  description     String
+  cost            Float
+  status          String   @default("pending") // "pending", "in_progress", "completed"
+  maintenanceDate DateTime
+  dueDate         DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+
+  @@index([status])
+  @@index([vehicleId])
+  @@index([maintenanceDate])
+}
+
+model FuelRecord {
+  id             String   @id @default(cuid())
+  quantity       Float    // liters
+  cost           Float
+  fuelType       String   // "petrol", "diesel", "electric"
+  mileage        Int      // odometer reading
+  location       String
+  date           DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+
+  @@index([vehicleId])
+  @@index([date])
+}
+
+model Expense {
+  id              String   @id @default(cuid())
+  category        String   // "toll", "parking", "accommodation", "meals", "repair", "other"
+  description     String
+  amount          Float
+  date            DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  tripId    String?
+  trip      Trip?   @relation(fields: [tripId], references: [id])
+  vehicleId String?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  @@index([tripId])
+  @@index([vehicleId])
+  @@index([category])
+  @@index([date])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  userId    String
+  details   String?  // JSON stored as string
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+}
+
+enum UserRole {
+  ADMIN
+  OPERATIONS_MANAGER
+  FLEET_MANAGER
+  DRIVER
+  ANALYST
+}
