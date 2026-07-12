@@ -1,81 +1,42 @@
-import { prisma } from './prisma'
-import bcrypt from 'bcryptjs'
-import { UserRole } from '@prisma/client'
+export type UserRole = 'ADMIN' | 'OPERATIONS_MANAGER' | 'DRIVER' | 'ACCOUNTANT' | 'ANALYST'
 
-export async function hashPassword(password: string): Promise<string> {
-  const salt = await bcrypt.genSalt(10)
-  return bcrypt.hash(password, salt)
-}
-
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash)
-}
-
-export async function createUser(
-  email: string,
-  password: string,
-  name: string,
+export interface User {
+  id: string
+  email: string
+  name: string
   role: UserRole
-) {
-  const hashedPassword = await hashPassword(password)
-  
-  return prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
-      name,
-      role,
-    },
-  })
 }
 
-export async function getUserByEmail(email: string) {
-  return prisma.user.findUnique({
-    where: { email },
-    include: {
-      driver: true,
-    },
-  })
+// Mock users for development/demo - no database needed
+const mockUsers: Record<string, User & { password: string }> = {
+  'admin@transitops.com': {
+    id: 'user-admin',
+    email: 'admin@transitops.com',
+    password: 'admin123',
+    name: 'Admin User',
+    role: 'ADMIN',
+  },
+  'operations@transitops.com': {
+    id: 'user-ops',
+    email: 'operations@transitops.com',
+    password: 'ops123',
+    name: 'Operations Manager',
+    role: 'OPERATIONS_MANAGER',
+  },
+  'john.driver@transitops.com': {
+    id: 'user-driver',
+    email: 'john.driver@transitops.com',
+    password: 'driver123',
+    name: 'John Driver',
+    role: 'DRIVER',
+  },
 }
 
-export async function getUserById(id: string) {
-  return prisma.user.findUnique({
-    where: { id },
-    include: {
-      driver: true,
-    },
-  })
-}
-
-export async function authenticateUser(email: string, password: string) {
-  const user = await getUserByEmail(email)
-  
-  if (!user || !user.active) {
-    return null
+export async function authenticateUser(email: string, password: string): Promise<User | null> {
+  const mockUser = mockUsers[email]
+  if (mockUser && mockUser.password === password) {
+    const { password: _, ...user } = mockUser
+    return user
   }
-  
-  const isPasswordValid = await verifyPassword(password, user.password)
-  if (!isPasswordValid) {
-    return null
-  }
-  
-  return user
-}
-
-export async function logAuditEvent(
-  userId: string,
-  action: string,
-  entity: string,
-  entityId: string,
-  details?: any
-) {
-  return prisma.auditLog.create({
-    data: {
-      userId,
-      action,
-      entity,
-      entityId,
-      details: details ? JSON.stringify(details) : null,
-    },
-  })
+  return null
 }

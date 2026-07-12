@@ -34,6 +34,7 @@ const handler = NextAuth({
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.email = user.email
       }
       return token
     },
@@ -41,6 +42,7 @@ const handler = NextAuth({
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string
+        session.user.email = token.email as string
       }
       return session
     },
@@ -48,7 +50,14 @@ const handler = NextAuth({
   pages: {
     signIn: '/login',
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
+  jwt: {
+    secret: process.env.NEXTAUTH_SECRET || 'transit-ops-secret-key-change-in-production',
+  },
+  secret: process.env.NEXTAUTH_SECRET || 'transit-ops-secret-key-change-in-production',
 })
 
 export { handler as GET, handler as POST }
