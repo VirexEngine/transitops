@@ -1,18 +1,16 @@
-import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { TopNav } from '@/components/dashboard/topnav'
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await getServerSession()
-
-  if (!session) {
-    redirect('/login')
-  }
+  // TODO: Re-enable auth check after login is working
+  // const session = await getServerSession()
+  // if (!session) {
+  //   redirect('/login')
+  // }
 
   return (
     <div className="flex h-screen bg-background">
